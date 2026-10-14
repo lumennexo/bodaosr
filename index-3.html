@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#192B38"><title>BODAS OS · Acceso</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,sans-serif;color:#192B38;background:#F5F2EC}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center}
+main{width:min(430px,calc(100% - 32px));background:#fff;padding:44px 32px;border-radius:20px;box-shadow:0 18px 55px #192b3815;text-align:center}
+.mark{color:#B69A79;font-size:40px;line-height:1}h1{font-size:32px;letter-spacing:.12em;margin:12px 0 0}
+.sub{color:#78938B;font-size:12px;letter-spacing:.16em;margin:8px 0 30px}
+label{display:block;text-align:left;font-size:13px;margin:18px 0 8px}
+input{width:100%;padding:15px;border:1px solid #ccd4d2;border-radius:9px;font-size:16px}
+button{background:#192B38;color:#fff;border:0;border-radius:9px;width:100%;padding:15px;margin-top:20px;font-size:15px;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}.message{min-height:26px;font-size:13px;color:#9e4141;margin-top:15px}
+footer{font-size:12px;color:#78938B;margin-top:22px}
+#splash{position:fixed;inset:0;background:#192B38;color:#F5F2EC;display:none;place-items:center;text-align:center;padding:20px}
+#splash.show{display:grid}#splash h2{font-size:38px;letter-spacing:.12em}#splash p{color:#B69A79}
+#app{display:none;width:min(960px,calc(100% - 32px));margin:30px auto}
+#app header{display:flex;justify-content:space-between;align-items:center}
+#app .panel{background:white;border-radius:16px;padding:24px;margin-top:24px}
+pre{white-space:pre-wrap;word-break:break-word;text-align:left;font-size:13px}
+</style></head><body>
+<main id="login"><div class="mark">◇</div><h1>BODAS OS</h1><div class="sub">by LUMEN</div>
+<p>Todo lo que necesitas para organizar cada gran momento.</p>
+<form id="form"><label for="key">Clave personal de acceso</label><input id="key" type="password" required autocomplete="off" placeholder="Ingresa tu clave">
+<button id="submit" type="submit">Entrar a mi escritorio</button></form>
+<div id="message" class="message" role="status"></div><footer>Gestión profesional de bodas</footer></main>
+<section id="splash" aria-live="polite"><div><div class="mark">◇</div><h2>BODAS OS</h2><p>Cada detalle bajo control.<br>Cada momento, extraordinario.</p><small>by LUMEN</small></div></section>
+<section id="app"><header><h1>BODAS OS</h1><button id="logout" style="width:auto;margin:0">Salir</button></header>
+<div class="panel"><h2>Escritorio</h2><p id="status">Cargando...</p><pre id="data"></pre></div></section>
+<script>
+// Configura aquí la URL PÚBLICA de tu Cloudflare Worker (no la de Apps Script).
+const API_URL = 'https://REEMPLAZAR-CON-TU-WORKER.workers.dev';
+const form=document.querySelector('#form'), button=document.querySelector('#submit');
+const message=document.querySelector('#message');
+async function request(action,datos,token){
+ if(API_URL.includes('REEMPLAZAR')) throw new Error('Falta configurar el Worker. Consulta docs/CONFIGURACION.md');
+ const response=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:action,datos,token})});
+ if(!response.ok)throw new Error('No fue posible conectar con el servicio.');
+ return response.json();
+}
+form.addEventListener('submit',async e=>{
+ e.preventDefault();button.disabled=true;message.textContent='';
+ const token=document.querySelector('#key').value.trim();
+ try{
+  const result=await request('panel',{},token);
+  if(!result.ok)throw new Error(result.error||'Clave no válida');
+  document.querySelector('#login').style.display='none';
+  document.querySelector('#splash').classList.add('show');
+  await new Promise(resolve=>setTimeout(resolve,5000));
+  document.querySelector('#splash').classList.remove('show');
+  document.querySelector('#app').style.display='block';
+  document.querySelector('#status').textContent='Acceso validado. Vista inicial de integración.';
+  document.querySelector('#data').textContent=JSON.stringify(result.resultado??result.data??result,null,2);
+ }catch(err){message.textContent=err.message}
+ finally{button.disabled=false}
+});
+document.querySelector('#logout').onclick=()=>{document.querySelector('#app').style.display='none';document.querySelector('#login').style.display='block';document.querySelector('#key').value='';document.querySelector('#data').textContent=''};
+</script></body></html>
